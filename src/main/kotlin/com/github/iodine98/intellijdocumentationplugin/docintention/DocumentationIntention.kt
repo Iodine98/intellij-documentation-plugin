@@ -6,7 +6,6 @@ import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElement
 import org.jetbrains.kotlin.psi.KtNamedFunction
-import com.intellij.psi.util.elementType
 
 class DocumentationIntention : PsiElementBaseIntentionAction(), IntentionAction {
     override fun startInWriteAction(): Boolean = true
@@ -16,7 +15,7 @@ class DocumentationIntention : PsiElementBaseIntentionAction(), IntentionAction 
     override fun getFamilyName(): String = "Write documentation"
 
     override fun isAvailable(project: Project, editor: Editor?, element: PsiElement): Boolean {
-        return element is KtNamedFunction
+        return element.parent is KtNamedFunction
     }
 
     override fun invoke(project: Project, editor: Editor?, element: PsiElement) {

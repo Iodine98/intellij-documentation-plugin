@@ -11,11 +11,6 @@
 
     <extensions defaultExtensionNs="com.intellij">
         <intentionAction>
-            <language>JAVA</language>
-            <className>com.github.iodine98.intellijdocumentationplugin.docintention.DocumentationIntention</className>
-            <category>Documentation intention</category>
-        </intentionAction>
-        <intentionAction>
             <language>kotlin</language>
             <className>com.github.iodine98.intellijdocumentationplugin.docintention.DocumentationIntention</className>
             <category>Documentation intention</category>
