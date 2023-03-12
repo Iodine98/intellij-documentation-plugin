@@ -1,0 +1,7 @@
+/**
+ * Returns a greeting string.
+ * @return The string "Hello World".
+ */
+fun greet(): String {
+    return "Hello World"
+}
