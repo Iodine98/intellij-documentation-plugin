@@ -1,18 +1,24 @@
 <!-- Plugin Configuration File. Read more: https://plugins.jetbrains.com/docs/intellij/plugin-configuration-file.html -->
 <idea-plugin>
     <id>com.github.iodine98.intellijdocumentationplugin</id>
-    <name>intellij-documentation-plugin Template</name>
+    <name>Documentation Intention</name>
     <vendor>iodine98</vendor>
-
     <depends>com.intellij.modules.platform</depends>
+    <depends>com.intellij.modules.java</depends>
+    <depends>org.jetbrains.kotlin</depends>
 
     <resource-bundle>messages.MyBundle</resource-bundle>
 
     <extensions defaultExtensionNs="com.intellij">
-        <toolWindow factoryClass="com.github.iodine98.intellijdocumentationplugin.toolWindow.MyToolWindowFactory" id="MyToolWindow"/>
+        <intentionAction>
+            <language>JAVA</language>
+            <className>com.github.iodine98.intellijdocumentationplugin.docintention.DocumentationIntention</className>
+            <category>Documentation intention</category>
+        </intentionAction>
+        <intentionAction>
+            <language>kotlin</language>
+            <className>com.github.iodine98.intellijdocumentationplugin.docintention.DocumentationIntention</className>
+            <category>Documentation intention</category>
+        </intentionAction>
     </extensions>
-
-    <applicationListeners>
-        <listener class="com.github.iodine98.intellijdocumentationplugin.listeners.MyFrameStateListener" topic="com.intellij.ide.FrameStateListener"/>
-    </applicationListeners>
 </idea-plugin>
