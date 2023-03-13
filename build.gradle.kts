@@ -1,6 +1,12 @@
 import org.jetbrains.changelog.Changelog
 import org.jetbrains.changelog.markdownToHTML
 
+//val ktorVersion: String = properties("ktor_version").get()
+
+
+
+
+
 fun properties(key: String) = providers.gradleProperty(key)
 fun environment(key: String) = providers.environmentVariable(key)
 
@@ -17,10 +23,13 @@ plugins {
     id("org.jetbrains.qodana") version "0.1.13"
     // Gradle Kover Plugin
     id("org.jetbrains.kotlinx.kover") version "0.6.1"
+    // Gradle Dotenv plugin
+    id("co.uzzu.dotenv.gradle") version "2.0.0"
 }
 
 group = properties("pluginGroup").get()
 version = properties("pluginVersion").get()
+
 
 // Configure project's dependencies
 repositories {
@@ -29,9 +38,13 @@ repositories {
 
 dependencies {
     implementation("com.aallam.openai:openai-client:3.1.0")
-    implementation("io.github.cdimascio:dotenv-kotlin:6.4.1")
+    implementation("io.ktor:ktor-client-java:2.2.4")
+    implementation("org.slf4j:slf4j-api") {
+        version {
+            strictly("2.0.6")
+        }
+    }
 }
-
 
 // Set the JVM language level used to build the project. Use Java 11 for 2020.3+, and Java 17 for 2022.2+.
 kotlin {
@@ -104,6 +117,10 @@ tasks {
                 )
             }
         })
+    }
+
+    runIde {
+        environment = env.allVariables
     }
 
     // Configure UI tests plugin
