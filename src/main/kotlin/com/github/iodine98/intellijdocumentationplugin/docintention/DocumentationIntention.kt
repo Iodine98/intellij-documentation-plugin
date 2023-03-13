@@ -56,8 +56,7 @@ open class DocumentationIntention : IntentionAction {
                     methodContext.text,
                     methodContext.language.displayName
                 )
-                val docCommentText = textCompletion.choices[0].text
-                println(docCommentText)
+                val docCommentText = textCompletion.choices[0].text.trim()
                 when (methodContext.language.displayName) {
                     "Java" -> {
                         val documentationFactory = JavaPsiFacade.getElementFactory(project)
