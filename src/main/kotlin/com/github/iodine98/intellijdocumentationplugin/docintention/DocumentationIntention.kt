@@ -12,6 +12,9 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiMethod
 import kotlinx.coroutines.runBlocking
+import org.jetbrains.kotlin.idea.quickfix.createFromUsage.callableBuilder.getReturnTypeReference
+import org.jetbrains.kotlin.lombok.utils.capitalize
+import org.jetbrains.kotlin.nj2k.postProcessing.type
 import org.jetbrains.kotlin.psi.KtFunction
 import org.jetbrains.kotlin.psi.KtPsiFactory
 import org.jetbrains.kotlin.psi.psiUtil.getParentOfType
@@ -46,18 +49,26 @@ open class DocumentationIntention : IntentionAction {
          * Code (partially) generated using ChatGPT
          * With prompt: How to generate some Java documentation above a method using an IntentionAction in IntelliJ IDEA plugin development in Kotlin?
          */
-        println(System.getProperty("java.class.path"))
         val element = file?.findElementAt(editor?.caretModel?.offset ?: return)
-        val languageDisplayName = element?.language?.displayName
-        val methodContext = getNearestFunction(element, languageDisplayName)
+        val methodContext = getNearestFunction(element, element?.language?.displayName)
+        val openAIEnabled: Boolean = System.getenv("OPENAI_ENABLED") == "TRUE"
         methodContext?.let { method ->
             runBlocking {
-                val textCompletion = getCompletionResponseFromOpenAI(
-                    methodContext.text,
-                    methodContext.language.displayName
-                )
-                val docCommentText = textCompletion.choices[0].text.trim()
-                when (methodContext.language.displayName) {
+                val languageDisplayName = methodContext.language.displayName
+                val docCommentText = when (openAIEnabled) {
+                    true -> {
+                        val textCompletion = getCompletionResponseFromOpenAI(
+                            methodContext.text,
+                            languageDisplayName
+                        )
+                        val response = textCompletion.choices[0].text.trim()
+                        val regexPattern = Regex("/\\*\\*(\\s|\\*|\\w|[\\[\\],.@#])+\\*/")
+                        regexPattern.find(response)?.value ?: ""
+                    }
+
+                    false -> getDocStringStub(method)
+                }
+                when (languageDisplayName) {
                     "Java" -> {
                         val documentationFactory = JavaPsiFacade.getElementFactory(project)
                         val newDocComment = documentationFactory.createDocCommentFromText(docCommentText)
@@ -76,6 +87,45 @@ open class DocumentationIntention : IntentionAction {
             }
         }
     }
+}
+
+private fun generateDocString(
+    functionName: String,
+    parameters: List<String>,
+    parameterTypes: List<String>,
+    returnType: String
+): String {
+    var docString = "/**\n"
+    docString += "* $functionName Method Description:\n"
+    docString += "* \n"
+    for ((index, param) in parameters.withIndex()) {
+        val paramType = "type " + parameterTypes.getOrElse(index) { "" }
+        docString += "* @param $param of $paramType \n"
+    }
+    docString += "* @return $returnType \n"
+    docString += "*/"
+    return docString
+}
+
+private fun getDocStringStub(methodElement: PsiElement): String {
+    if (methodElement.language.displayName == "Java") {
+        val methodSignature = methodElement as PsiMethod
+        val params = methodSignature.parameterList.parameters.map { it.name }
+        val paramTypes = methodSignature.parameterList.parameters.map { it.type.canonicalText }
+        val returnType = methodSignature.returnType?.canonicalText ?: "void"
+        val functionName = methodSignature.name.capitalize()
+        return generateDocString(functionName, params, paramTypes, returnType)
+
+    }
+    if (methodElement.language.displayName == "Kotlin") {
+        val methodSignature = methodElement as KtFunction
+        val params = methodSignature.valueParameterList?.parameters?.map { it.name!! } ?: listOf()
+        val paramTypes = methodSignature.valueParameterList?.parameters?.map { it.type().toString() } ?: listOf()
+        val returnType = methodSignature.getReturnTypeReference()?.text ?: "void"
+        val functionName = methodSignature.name?.capitalize() ?: "Unnamed Function"
+        return generateDocString(functionName, params, paramTypes, returnType)
+    }
+    return ""
 }
 
 private suspend fun getCompletionResponseFromOpenAI(
