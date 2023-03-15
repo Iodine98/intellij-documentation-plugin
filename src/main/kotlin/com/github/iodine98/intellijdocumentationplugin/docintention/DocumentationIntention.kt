@@ -23,10 +23,13 @@ import org.jetbrains.kotlin.psi.psiUtil.getParentOfType
 open class DocumentationIntention : PsiElementBaseIntentionAction() {
     override fun startInWriteAction(): Boolean = true
 
-    override fun getText(): String = "Write documentation for this method"
+    override fun getText(): String = "Generate documentation for this method"
 
     override fun getFamilyName(): String = "Write documentation"
 
+    /**
+     * Find the closes parent function that is in the scope of the current PsiElement
+     */
     private fun getNearestFunction(element: PsiElement, languageDisplayName: String?): PsiElement? {
         return when (languageDisplayName) {
             "Java" -> element.getParentOfType<PsiMethod>(true)
@@ -35,26 +38,28 @@ open class DocumentationIntention : PsiElementBaseIntentionAction() {
         }
     }
 
+    /**
+     * If an element is hovered over with the cursor, then trigger this method to check if intention should appear
+     */
     override fun isAvailable(project: Project, editor: Editor?, element: PsiElement): Boolean {
-        /**
-         * Code generated using ChatGPT
-         * With prompt: How to generate some Java documentation above a method using an IntentionAction in IntelliJ IDEA plugin development in Kotlin?
-         */
         return getNearestFunction(element, element.language.displayName) != null
     }
 
+    /**
+     * If intention is selected, trigger this method
+     *
+     */
     override fun invoke(project: Project, editor: Editor?, element: PsiElement) {
-        /**
-         * Code (partially) generated using ChatGPT
-         * With prompt: How to generate some Java documentation above a method using an IntentionAction in IntelliJ IDEA plugin development in Kotlin?
-         */
-        val openAIEnabled: Boolean = System.getenv("OPENAI_ENABLED") == "TRUE"
+
+        val openAIEnabled: Boolean = System.getenv("OPENAI_ENABLED") == "TRUE" // Use either a stubbed documentation by setting OPENAI_ENABLED = FALSE or call the OpenAI documentation
         getNearestFunction(element, element.language.displayName)?.let { method ->
             val docCommentText = when (openAIEnabled) {
+                // Depending on openAIEnabled either call API or generate stub
                 true -> getDocStringFromOpenAI(method, method.language.displayName)
                 false -> getDocStringStub(method)
             }
             val docComment: PsiComment? = when (method.language.displayName) {
+                // Call different methods based on programming language
                 "Java" -> JavaPsiFacade.getElementFactory(project).createCommentFromText(docCommentText, method)
                 "Kotlin" -> KtPsiFactory(project).createComment(docCommentText)
                 else -> null
@@ -63,15 +68,19 @@ open class DocumentationIntention : PsiElementBaseIntentionAction() {
         }
     }
 
+    /**
+     * This method generates documentation using an unofficial Kotlin library to connect to OpenAI REST APIs
+     * Since the getCompletionResponseFromOpenAI method has a `suspend` modifier, I use runBlocking to force the thread to wait until it gets the response from OpenAI
+     */
     private fun getDocStringFromOpenAI(method: PsiElement, languageDisplayName: String): String = runBlocking {
         val textCompletion = getCompletionResponseFromOpenAI(
             functionContent = method.text,
             languageDisplayName = languageDisplayName
         )
-        val response = textCompletion.choices[0].text.trim()
-        val regexPattern = Regex("/\\*\\*([\\s\\S]*?)\\*/")
+        val response = textCompletion.choices[0].text.trim() // Trim any whitespace to suit the addComment function calls
+        val regexPattern = Regex("/\\*\\*([\\s\\S]*?)\\*/") // Regex generated using chatGPT to parse KDoc/JavaDoc comments
         val matcherResult = regexPattern.find(response)
-        val commentText = matcherResult?.value ?: "No comment"
+        val commentText = matcherResult?.value ?: "No comment" // Elvis operator to at least return something if the above expression were to fail
         commentText
     }
 
@@ -92,7 +101,11 @@ open class DocumentationIntention : PsiElementBaseIntentionAction() {
         }
     }
 
+    /**
+     * Get the DocStringStub based on the programming language
+     */
     private fun getDocStringStub(methodElement: PsiElement): String = when (methodElement.language.displayName) {
+
         "Java" -> getDocStringStubJava(methodElement)
         "Kotlin" -> getDocStringStubKotlin(methodElement)
         else -> ""
@@ -132,13 +145,13 @@ open class DocumentationIntention : PsiElementBaseIntentionAction() {
         modelId: String = "text-davinci-003",
         openAIKey: String = "OPENAI_API_KEY"
     ): TextCompletion {
-        val envVar: String = System.getenv(openAIKey)
-        val openAIClient = OpenAI(envVar)
+        val envVar: String = System.getenv(openAIKey) // Get the ENVIRONMENT VARIABLE for the OPENAI_API_KEY
+        val openAIClient = OpenAI(envVar) // initialize the client
         val documentationLanguage = when (languageDisplayName) {
             "Java" -> "JavaDoc"
             "Kotlin" -> "KDoc"
             else -> "documentation"
-        }
+        } // Change the documentation vocabulary based on programming language
 
         val completionRequest = CompletionRequest(
             model = ModelId(modelId),
@@ -150,7 +163,7 @@ open class DocumentationIntention : PsiElementBaseIntentionAction() {
                 append("$functionContent\n")
                 append("```")
             },
-            temperature = 0.7,
+            temperature = 0.7, // These are recommended settings by OpenAI
             maxTokens = 256,
             topP = 1.0,
             frequencyPenalty = 0.0,
