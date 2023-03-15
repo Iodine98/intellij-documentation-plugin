@@ -130,7 +130,7 @@ open class DocumentationIntention : PsiElementBaseIntentionAction() {
         functionContent: String,
         languageDisplayName: String,
         modelId: String = "text-davinci-003",
-        openAIKey: String = "OPEN_API_KEY"
+        openAIKey: String = "OPENAI_API_KEY"
     ): TextCompletion {
         val envVar: String = System.getenv(openAIKey)
         val openAIClient = OpenAI(envVar)
