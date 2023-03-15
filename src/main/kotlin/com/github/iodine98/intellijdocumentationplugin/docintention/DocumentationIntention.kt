@@ -21,6 +21,8 @@ import org.jetbrains.kotlin.psi.psiUtil.getParentOfType
 
 
 open class DocumentationIntention : PsiElementBaseIntentionAction() {
+    private val openAIAPIEnvKey = "OPENAI_API_KEY"
+    private val openAIEnableEnvKey = "OPENAI_ENABLED"
     override fun startInWriteAction(): Boolean = true
 
     override fun getText(): String = "Generate documentation for this method"
@@ -50,8 +52,7 @@ open class DocumentationIntention : PsiElementBaseIntentionAction() {
      *
      */
     override fun invoke(project: Project, editor: Editor?, element: PsiElement) {
-
-        val openAIEnabled: Boolean = System.getenv("OPENAI_ENABLED") == "TRUE" // Use either a stubbed documentation by setting OPENAI_ENABLED = FALSE or call the OpenAI documentation
+        val openAIEnabled: Boolean = System.getenv(openAIEnableEnvKey) == "TRUE" // Use either a stubbed documentation by setting OPENAI_ENABLED = FALSE or call the OpenAI documentation
         getNearestFunction(element, element.language.displayName)?.let { method ->
             val docCommentText = when (openAIEnabled) {
                 // Depending on openAIEnabled either call API or generate stub
@@ -142,10 +143,9 @@ open class DocumentationIntention : PsiElementBaseIntentionAction() {
     private suspend fun getCompletionResponseFromOpenAI(
         functionContent: String,
         languageDisplayName: String,
-        modelId: String = "text-davinci-003",
-        openAIKey: String = "OPENAI_API_KEY"
+        modelId: String = "text-davinci-003"
     ): TextCompletion {
-        val envVar: String = System.getenv(openAIKey) // Get the ENVIRONMENT VARIABLE for the OPENAI_API_KEY
+        val envVar: String = System.getenv(openAIAPIEnvKey) // Get the ENVIRONMENT VARIABLE for the OPENAI_API_KEY
         val openAIClient = OpenAI(envVar) // initialize the client
         val documentationLanguage = when (languageDisplayName) {
             "Java" -> "JavaDoc"

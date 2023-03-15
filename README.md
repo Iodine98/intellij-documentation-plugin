@@ -1,17 +1,21 @@
 # intellij-documentation-plugin
 
-[//]: # (![Build]&#40;https://github.com/Iodine98/intellij-documentation-plugin/workflows/Build/badge.svg&#41;)
-
-[//]: # ([![Version]&#40;https://img.shields.io/jetbrains/plugin/v/PLUGIN_ID.svg&#41;]&#40;https://plugins.jetbrains.com/plugin/PLUGIN_ID&#41;)
-
-[//]: # ([![Downloads]&#40;https://img.shields.io/jetbrains/plugin/d/PLUGIN_ID.svg&#41;]&#40;https://plugins.jetbrains.com/plugin/PLUGIN_ID&#41;)
-
 <!-- Plugin description -->
-This plugin attempts to generate KDoc (for Kotlin) or JavaDoc (for Java) based on the method body.
+This plugin attempts to generate KDoc (for Kotlin) or JavaDoc (for Java) based on the function/method body.
 
 <!-- Plugin description end -->
 
 ## How to run the plugin
 
 1. Clone the repository
-2. 
+2. Open in IntelliJ
+3. Ensure that the SDK is set to at least JDK 17 or higher in terms of version
+4. Build Gradle project (this will happen automatically in IntelliJ)
+5. Add an `.env` file with the following two parameters:
+    1. `OPENAI_API_KEY` which holds your API key for access to OpenAI's models. Configure your `.env` file like this:  `OPENAI_API_KEY=<your key>`
+   2. `OPENAI_ENABLED` which causes the plugin to call the OpenAI API endpoint. If this variable does not equal `TRUE`, the plugin will default to the standard documentation stub. Configure your `.env` as such: `OPENAI_ENABLED=TRUE` 
+6. Repeat step 4. to ensure that the `runIde` task in Gradle exports the variables from the `.env` file to the JVM
+7. Select the `Run Plugin` configuration
+8. Set the cursor to the method definition or inside of it and trigger the intention.
+9. Select `generate documentation for this method`
+10. Observe the magic!

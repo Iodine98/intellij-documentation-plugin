@@ -1,7 +1,6 @@
 import org.jetbrains.changelog.Changelog
 import org.jetbrains.changelog.markdownToHTML
 
-//val ktorVersion: String = properties("ktor_version").get()
 
 
 
