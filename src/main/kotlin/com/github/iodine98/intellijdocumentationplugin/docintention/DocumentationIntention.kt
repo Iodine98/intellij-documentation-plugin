@@ -65,7 +65,8 @@ open class DocumentationIntention : PsiElementBaseIntentionAction() {
 
     private fun getDocStringFromOpenAI(method: PsiElement, languageDisplayName: String): String = runBlocking {
         val textCompletion = getCompletionResponseFromOpenAI(
-            method.text, languageDisplayName
+            functionContent = method.text,
+            languageDisplayName = languageDisplayName
         )
         val response = textCompletion.choices[0].text.trim()
         val regexPattern = Regex("/\\*\\*([\\s\\S]*?)\\*/")
@@ -79,25 +80,22 @@ open class DocumentationIntention : PsiElementBaseIntentionAction() {
         parameters: List<String>,
         parameterTypes: List<String>,
         returnType: String
-    ): String {
-        var docString = "/**\n"
-        docString += "* $functionName Method Description:\n"
-        docString += "* \n"
+    ): String = buildString {
+        append("/**\n")
+        append("* $functionName Method Description:\n")
+        append("* \n")
         for ((index, param) in parameters.withIndex()) {
             val paramType = "type " + parameterTypes.getOrElse(index) { "" }
-            docString += "* @param $param of $paramType \n"
+            append("* @param $param of $paramType \n")
+            append("* @return $returnType \n")
+            append("*/")
         }
-        docString += "* @return $returnType \n"
-        docString += "*/"
-        return docString
     }
 
-    private fun getDocStringStub(methodElement: PsiElement): String {
-        return when (methodElement.language.displayName) {
-            "Java" -> getDocStringStubJava(methodElement)
-            "Kotlin" -> getDocStringStubKotlin(methodElement)
-            else -> ""
-        }
+    private fun getDocStringStub(methodElement: PsiElement): String = when (methodElement.language.displayName) {
+        "Java" -> getDocStringStubJava(methodElement)
+        "Kotlin" -> getDocStringStubKotlin(methodElement)
+        else -> ""
     }
 
     private fun getDocStringStubKotlin(methodElement: PsiElement): String {
@@ -106,7 +104,12 @@ open class DocumentationIntention : PsiElementBaseIntentionAction() {
         val paramTypes = methodSignature.valueParameterList?.parameters?.map { it.type().toString() } ?: listOf()
         val returnType = methodSignature.getReturnTypeReference()?.text ?: "void"
         val functionName = methodSignature.name?.capitalize() ?: "Unnamed Function"
-        return generateDocString(functionName, params, paramTypes, returnType)
+        return generateDocString(
+            functionName = functionName,
+            parameters = params,
+            parameterTypes = paramTypes,
+            returnType = returnType
+        )
     }
 
     private fun getDocStringStubJava(methodElement: PsiElement): String {
@@ -115,29 +118,38 @@ open class DocumentationIntention : PsiElementBaseIntentionAction() {
         val paramTypes = methodSignature.parameterList.parameters.map { it.type.canonicalText }
         val returnType = methodSignature.returnType?.canonicalText ?: "void"
         val functionName = methodSignature.name.capitalize()
-        return generateDocString(functionName, params, paramTypes, returnType)
+        return generateDocString(
+            functionName = functionName,
+            parameters = params,
+            parameterTypes = paramTypes,
+            returnType = returnType
+        )
     }
 
     private suspend fun getCompletionResponseFromOpenAI(
         functionContent: String,
         languageDisplayName: String,
-        modelId: String = "text-davinci-003"
+        modelId: String = "text-davinci-003",
+        openAIKey: String = "OPEN_API_KEY"
     ): TextCompletion {
-        val envVar: String = System.getenv("OPENAI_API_KEY")
+        val envVar: String = System.getenv(openAIKey)
         val openAIClient = OpenAI(envVar)
         val documentationLanguage = when (languageDisplayName) {
             "Java" -> "JavaDoc"
             "Kotlin" -> "KDoc"
             else -> "documentation"
         }
+
         val completionRequest = CompletionRequest(
             model = ModelId(modelId),
-            prompt = "Generate only the " + documentationLanguage + " for the function below that has been written in " +
-                    languageDisplayName +
-                    "\n " +
-                    "```" + languageDisplayName + "\n" +
-                    functionContent + "\n" +
-                    "```",
+            prompt = buildString {
+                append("Generate only the $documentationLanguage ")
+                append("for the function below that has been written in")
+                append("$languageDisplayName: \n")
+                append("```$languageDisplayName\n")
+                append("$functionContent\n")
+                append("```")
+            },
             temperature = 0.7,
             maxTokens = 256,
             topP = 1.0,
