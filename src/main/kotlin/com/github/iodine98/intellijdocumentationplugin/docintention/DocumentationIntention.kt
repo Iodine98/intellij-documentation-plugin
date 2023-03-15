@@ -55,7 +55,7 @@ open class DocumentationIntention : PsiElementBaseIntentionAction() {
                 false -> getDocStringStub(method)
             }
             val docComment: PsiComment? = when (method.language.displayName) {
-                "Java" -> JavaPsiFacade.getElementFactory(project).createDocCommentFromText(docCommentText)
+                "Java" -> JavaPsiFacade.getElementFactory(project).createCommentFromText(docCommentText, method)
                 "Kotlin" -> KtPsiFactory(project).createComment(docCommentText)
                 else -> null
             }
