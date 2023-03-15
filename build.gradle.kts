@@ -51,6 +51,9 @@ kotlin {
     jvmToolchain(11)
 }
 
+java {
+    toolchain.languageVersion.set(JavaLanguageVersion.of(11))
+}
 
 
 // Configure Gradle IntelliJ Plugin - read more: https://plugins.jetbrains.com/docs/intellij/tools-gradle-intellij-plugin.html
