@@ -2,8 +2,11 @@ package com.github.iodine98.intellijdocumentationplugin.docintention
 
 import com.aallam.openai.api.completion.CompletionRequest
 import com.aallam.openai.api.completion.TextCompletion
+import com.aallam.openai.api.logging.LogLevel
+import com.aallam.openai.api.logging.Logger
 import com.aallam.openai.api.model.ModelId
 import com.aallam.openai.client.OpenAI
+import com.aallam.openai.client.OpenAIConfig
 import com.intellij.codeInsight.intention.PsiElementBaseIntentionAction
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.project.Project
@@ -20,9 +23,10 @@ import org.jetbrains.kotlin.psi.KtPsiFactory
 import org.jetbrains.kotlin.psi.psiUtil.getParentOfType
 
 
-open class DocumentationIntention : PsiElementBaseIntentionAction() {
+open class DocumentationIntention() : PsiElementBaseIntentionAction() {
     private val openAIAPIEnvKey = "OPENAI_API_KEY"
     private val openAIEnableEnvKey = "OPENAI_ENABLED"
+
     override fun startInWriteAction(): Boolean = true
 
     override fun getText(): String = "Generate documentation for this method"
@@ -146,7 +150,13 @@ open class DocumentationIntention : PsiElementBaseIntentionAction() {
         modelId: String = "text-davinci-003"
     ): TextCompletion {
         val envVar: String = System.getenv(openAIAPIEnvKey) // Get the ENVIRONMENT VARIABLE for the OPENAI_API_KEY
-        val openAIClient = OpenAI(envVar) // initialize the client
+        val openAIClient = OpenAI(
+            OpenAIConfig(
+                token = envVar,
+                logLevel = LogLevel.None,
+                logger = Logger.Empty
+            )
+        ) // initialize the client
         val documentationLanguage = when (languageDisplayName) {
             "Java" -> "JavaDoc"
             "Kotlin" -> "KDoc"
