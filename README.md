@@ -2,6 +2,9 @@
 
 <!-- Plugin description -->
 This plugin attempts to generate KDoc (for Kotlin) or JavaDoc (for Java) based on the function/method body.
+This plugin has two modes:
+1. AI mode: let GPT-3.5 (the model that runs ChatGPT) generate documentation for you
+2. Manual mode: write KDoc/JavaDoc based on the types of the arguments of the function/method and its return type.
 
 <!-- Plugin description end -->
 
